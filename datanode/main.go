@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 	"context"
+	"math/rand"
 	"google.golang.org/grpc"
 	pb "../proto"
 	"fmt"
@@ -11,7 +12,14 @@ import (
 
 const (
 	port = ":50051" //Quiza debamos usar distintos puertos segun en que trabajamos
+	addressNameNode  = "10.10.28.10:50051"
+	addressDataNodeSelf  = "10.10.28.11:50051"
+	addressDataNode1  = "10.10.28.12:50051"
+	addressDataNode2  = "10.10.28.13:50051"
 )
+
+var dataNodes = [3]string{addressDataNodeSelf,addressDataNode1,addressDataNode2}
+
 type server struct {
 	pb.UnimplementedOrdenServiceServer
 }
@@ -40,6 +48,18 @@ func (s* server) UploadBook(stream pb.OrdenService_UploadBookServer) error {
 		chunk, err := stream.Recv()
 		if err == io.EOF { // no hay mas chunks
 			//enviar la propuesta
+			s1 := rand.NewSource(time.Now().UnixNano())
+    		r1 := rand.New(s1)
+
+    		prop := []int{}
+
+    		for len(prop) != len(ChunksPorEnviar) { //aleatoriamente se elige donde se alamcena cada chunk
+    			prop = append(prop,r1.Intn(len(dataNodes)))
+    		}
+
+    		for _, add := range prop {
+    			//enviar DataNode[add]
+    		}
 
 		} else if err != nil { // hubo un problema
 			fmt.Println(err)
