@@ -4,10 +4,23 @@ syntax = "proto3";
 package proto; 
 
 
-service OrdenService {
+service LibroService {
   rpc uploadBook(stream sendChunk) returns (replyEmpty);
   rpc getAddressChunks(bookName) returns (stream sendUbicacion);
   rpc downloadChunk(chunkId) returns (sendChunk);
+  rpc sendPropuesta(Propuesta) returns (Propuesta);
+  rpc OrdenarChunk(sendChunk) returns (replyEmpty);
+}
+
+message Propuesta{
+  repeated PropuestaChunk chunk = 1;
+
+}
+
+message PropuestaChunk{
+  int64 offset= 1;
+  string ipMaquina= 2;
+  string nombreLibro= 3; 
 }
 
 message sendChunk {
@@ -27,6 +40,7 @@ message bookName {
 
 message sendUbicacion {
   string ubicacion = 1;
+  string id = 2;
 }
 
 message chunkId {
