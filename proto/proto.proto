@@ -10,6 +10,11 @@ service LibroService {
   rpc downloadChunk(chunkId) returns (sendChunk);
   rpc sendPropuesta(Propuesta) returns (Propuesta);
   rpc OrdenarChunk(sendChunk) returns (replyEmpty);
+  rpc verStatus(Status) returns (Status);
+}
+
+message Status{
+  string status=1;
 }
 
 message Propuesta{
