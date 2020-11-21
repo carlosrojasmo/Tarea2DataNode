@@ -56,10 +56,26 @@ func (s* server) UploadBook(stream pb.OrdenService_UploadBookServer) error {
     		for len(prop) != len(ChunksPorEnviar) { //aleatoriamente se elige donde se alamcena cada chunk
     			prop = append(prop,r1.Intn(len(dataNodes)))
     		}
+             
+            distribucion := []*pb.PropuestaChunk
 
-    		for _, add := range prop {
-    			//enviar DataNode[add]
+    		for i, add := range prop {
+    			distribucion = append(distribucion,pb.PropuestaChunk{Offset : ChunksPorEnviar[i].GetOffset(),
+    				IpMaquina : dataNodes[add],NombreLibro : ChunksPorEnviar[i].GetName()})
     		}
+
+    		conn, err := grpc.Dial(addressNameNode, grpc.WithInsecure(), grpc.WithBlock())
+    		if err != nil {
+    			log.Fatalf("did not connect: %v", err)
+    		}
+    		defer conn.Close()
+    		c := pb.NewLibroServiceClient(conn)
+    		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+			distribucionRevisada , err :=c.SendPropuesta(ctx,pb.Propuesta{Chunk : distribucion})
+			if err != nil{
+				fmt.Println(err)
+			}
 
 		} else if err != nil { // hubo un problema
 			fmt.Println(err)
