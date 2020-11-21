@@ -13,47 +13,49 @@ import (
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion7
 
-// OrdenServiceClient is the client API for OrdenService service.
+// LibroServiceClient is the client API for LibroService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type OrdenServiceClient interface {
-	UploadBook(ctx context.Context, opts ...grpc.CallOption) (OrdenService_UploadBookClient, error)
-	GetAddressChunks(ctx context.Context, in *BookName, opts ...grpc.CallOption) (OrdenService_GetAddressChunksClient, error)
+type LibroServiceClient interface {
+	UploadBook(ctx context.Context, opts ...grpc.CallOption) (LibroService_UploadBookClient, error)
+	GetAddressChunks(ctx context.Context, in *BookName, opts ...grpc.CallOption) (LibroService_GetAddressChunksClient, error)
 	DownloadChunk(ctx context.Context, in *ChunkId, opts ...grpc.CallOption) (*SendChunk, error)
+	SendPropuesta(ctx context.Context, in *Propuesta, opts ...grpc.CallOption) (*Propuesta, error)
+	OrdenarChunk(ctx context.Context, in *SendChunk, opts ...grpc.CallOption) (*ReplyEmpty, error)
 }
 
-type ordenServiceClient struct {
+type libroServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewOrdenServiceClient(cc grpc.ClientConnInterface) OrdenServiceClient {
-	return &ordenServiceClient{cc}
+func NewLibroServiceClient(cc grpc.ClientConnInterface) LibroServiceClient {
+	return &libroServiceClient{cc}
 }
 
-func (c *ordenServiceClient) UploadBook(ctx context.Context, opts ...grpc.CallOption) (OrdenService_UploadBookClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_OrdenService_serviceDesc.Streams[0], "/proto.OrdenService/uploadBook", opts...)
+func (c *libroServiceClient) UploadBook(ctx context.Context, opts ...grpc.CallOption) (LibroService_UploadBookClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_LibroService_serviceDesc.Streams[0], "/proto.LibroService/uploadBook", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &ordenServiceUploadBookClient{stream}
+	x := &libroServiceUploadBookClient{stream}
 	return x, nil
 }
 
-type OrdenService_UploadBookClient interface {
+type LibroService_UploadBookClient interface {
 	Send(*SendChunk) error
 	CloseAndRecv() (*ReplyEmpty, error)
 	grpc.ClientStream
 }
 
-type ordenServiceUploadBookClient struct {
+type libroServiceUploadBookClient struct {
 	grpc.ClientStream
 }
 
-func (x *ordenServiceUploadBookClient) Send(m *SendChunk) error {
+func (x *libroServiceUploadBookClient) Send(m *SendChunk) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *ordenServiceUploadBookClient) CloseAndRecv() (*ReplyEmpty, error) {
+func (x *libroServiceUploadBookClient) CloseAndRecv() (*ReplyEmpty, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
@@ -64,12 +66,12 @@ func (x *ordenServiceUploadBookClient) CloseAndRecv() (*ReplyEmpty, error) {
 	return m, nil
 }
 
-func (c *ordenServiceClient) GetAddressChunks(ctx context.Context, in *BookName, opts ...grpc.CallOption) (OrdenService_GetAddressChunksClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_OrdenService_serviceDesc.Streams[1], "/proto.OrdenService/getAddressChunks", opts...)
+func (c *libroServiceClient) GetAddressChunks(ctx context.Context, in *BookName, opts ...grpc.CallOption) (LibroService_GetAddressChunksClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_LibroService_serviceDesc.Streams[1], "/proto.LibroService/getAddressChunks", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &ordenServiceGetAddressChunksClient{stream}
+	x := &libroServiceGetAddressChunksClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -79,16 +81,16 @@ func (c *ordenServiceClient) GetAddressChunks(ctx context.Context, in *BookName,
 	return x, nil
 }
 
-type OrdenService_GetAddressChunksClient interface {
+type LibroService_GetAddressChunksClient interface {
 	Recv() (*SendUbicacion, error)
 	grpc.ClientStream
 }
 
-type ordenServiceGetAddressChunksClient struct {
+type libroServiceGetAddressChunksClient struct {
 	grpc.ClientStream
 }
 
-func (x *ordenServiceGetAddressChunksClient) Recv() (*SendUbicacion, error) {
+func (x *libroServiceGetAddressChunksClient) Recv() (*SendUbicacion, error) {
 	m := new(SendUbicacion)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -96,70 +98,96 @@ func (x *ordenServiceGetAddressChunksClient) Recv() (*SendUbicacion, error) {
 	return m, nil
 }
 
-func (c *ordenServiceClient) DownloadChunk(ctx context.Context, in *ChunkId, opts ...grpc.CallOption) (*SendChunk, error) {
+func (c *libroServiceClient) DownloadChunk(ctx context.Context, in *ChunkId, opts ...grpc.CallOption) (*SendChunk, error) {
 	out := new(SendChunk)
-	err := c.cc.Invoke(ctx, "/proto.OrdenService/downloadChunk", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.LibroService/downloadChunk", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// OrdenServiceServer is the server API for OrdenService service.
-// All implementations must embed UnimplementedOrdenServiceServer
+func (c *libroServiceClient) SendPropuesta(ctx context.Context, in *Propuesta, opts ...grpc.CallOption) (*Propuesta, error) {
+	out := new(Propuesta)
+	err := c.cc.Invoke(ctx, "/proto.LibroService/sendPropuesta", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *libroServiceClient) OrdenarChunk(ctx context.Context, in *SendChunk, opts ...grpc.CallOption) (*ReplyEmpty, error) {
+	out := new(ReplyEmpty)
+	err := c.cc.Invoke(ctx, "/proto.LibroService/OrdenarChunk", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// LibroServiceServer is the server API for LibroService service.
+// All implementations must embed UnimplementedLibroServiceServer
 // for forward compatibility
-type OrdenServiceServer interface {
-	UploadBook(OrdenService_UploadBookServer) error
-	GetAddressChunks(*BookName, OrdenService_GetAddressChunksServer) error
+type LibroServiceServer interface {
+	UploadBook(LibroService_UploadBookServer) error
+	GetAddressChunks(*BookName, LibroService_GetAddressChunksServer) error
 	DownloadChunk(context.Context, *ChunkId) (*SendChunk, error)
-	mustEmbedUnimplementedOrdenServiceServer()
+	SendPropuesta(context.Context, *Propuesta) (*Propuesta, error)
+	OrdenarChunk(context.Context, *SendChunk) (*ReplyEmpty, error)
+	mustEmbedUnimplementedLibroServiceServer()
 }
 
-// UnimplementedOrdenServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedOrdenServiceServer struct {
+// UnimplementedLibroServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedLibroServiceServer struct {
 }
 
-func (UnimplementedOrdenServiceServer) UploadBook(OrdenService_UploadBookServer) error {
+func (UnimplementedLibroServiceServer) UploadBook(LibroService_UploadBookServer) error {
 	return status.Errorf(codes.Unimplemented, "method UploadBook not implemented")
 }
-func (UnimplementedOrdenServiceServer) GetAddressChunks(*BookName, OrdenService_GetAddressChunksServer) error {
+func (UnimplementedLibroServiceServer) GetAddressChunks(*BookName, LibroService_GetAddressChunksServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetAddressChunks not implemented")
 }
-func (UnimplementedOrdenServiceServer) DownloadChunk(context.Context, *ChunkId) (*SendChunk, error) {
+func (UnimplementedLibroServiceServer) DownloadChunk(context.Context, *ChunkId) (*SendChunk, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DownloadChunk not implemented")
 }
-func (UnimplementedOrdenServiceServer) mustEmbedUnimplementedOrdenServiceServer() {}
+func (UnimplementedLibroServiceServer) SendPropuesta(context.Context, *Propuesta) (*Propuesta, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendPropuesta not implemented")
+}
+func (UnimplementedLibroServiceServer) OrdenarChunk(context.Context, *SendChunk) (*ReplyEmpty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method OrdenarChunk not implemented")
+}
+func (UnimplementedLibroServiceServer) mustEmbedUnimplementedLibroServiceServer() {}
 
-// UnsafeOrdenServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to OrdenServiceServer will
+// UnsafeLibroServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to LibroServiceServer will
 // result in compilation errors.
-type UnsafeOrdenServiceServer interface {
-	mustEmbedUnimplementedOrdenServiceServer()
+type UnsafeLibroServiceServer interface {
+	mustEmbedUnimplementedLibroServiceServer()
 }
 
-func RegisterOrdenServiceServer(s *grpc.Server, srv OrdenServiceServer) {
-	s.RegisterService(&_OrdenService_serviceDesc, srv)
+func RegisterLibroServiceServer(s *grpc.Server, srv LibroServiceServer) {
+	s.RegisterService(&_LibroService_serviceDesc, srv)
 }
 
-func _OrdenService_UploadBook_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(OrdenServiceServer).UploadBook(&ordenServiceUploadBookServer{stream})
+func _LibroService_UploadBook_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(LibroServiceServer).UploadBook(&libroServiceUploadBookServer{stream})
 }
 
-type OrdenService_UploadBookServer interface {
+type LibroService_UploadBookServer interface {
 	SendAndClose(*ReplyEmpty) error
 	Recv() (*SendChunk, error)
 	grpc.ServerStream
 }
 
-type ordenServiceUploadBookServer struct {
+type libroServiceUploadBookServer struct {
 	grpc.ServerStream
 }
 
-func (x *ordenServiceUploadBookServer) SendAndClose(m *ReplyEmpty) error {
+func (x *libroServiceUploadBookServer) SendAndClose(m *ReplyEmpty) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *ordenServiceUploadBookServer) Recv() (*SendChunk, error) {
+func (x *libroServiceUploadBookServer) Recv() (*SendChunk, error) {
 	m := new(SendChunk)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -167,63 +195,107 @@ func (x *ordenServiceUploadBookServer) Recv() (*SendChunk, error) {
 	return m, nil
 }
 
-func _OrdenService_GetAddressChunks_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _LibroService_GetAddressChunks_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(BookName)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(OrdenServiceServer).GetAddressChunks(m, &ordenServiceGetAddressChunksServer{stream})
+	return srv.(LibroServiceServer).GetAddressChunks(m, &libroServiceGetAddressChunksServer{stream})
 }
 
-type OrdenService_GetAddressChunksServer interface {
+type LibroService_GetAddressChunksServer interface {
 	Send(*SendUbicacion) error
 	grpc.ServerStream
 }
 
-type ordenServiceGetAddressChunksServer struct {
+type libroServiceGetAddressChunksServer struct {
 	grpc.ServerStream
 }
 
-func (x *ordenServiceGetAddressChunksServer) Send(m *SendUbicacion) error {
+func (x *libroServiceGetAddressChunksServer) Send(m *SendUbicacion) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _OrdenService_DownloadChunk_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _LibroService_DownloadChunk_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ChunkId)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(OrdenServiceServer).DownloadChunk(ctx, in)
+		return srv.(LibroServiceServer).DownloadChunk(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.OrdenService/DownloadChunk",
+		FullMethod: "/proto.LibroService/DownloadChunk",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OrdenServiceServer).DownloadChunk(ctx, req.(*ChunkId))
+		return srv.(LibroServiceServer).DownloadChunk(ctx, req.(*ChunkId))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-var _OrdenService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.OrdenService",
-	HandlerType: (*OrdenServiceServer)(nil),
+func _LibroService_SendPropuesta_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Propuesta)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LibroServiceServer).SendPropuesta(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.LibroService/SendPropuesta",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LibroServiceServer).SendPropuesta(ctx, req.(*Propuesta))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LibroService_OrdenarChunk_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendChunk)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LibroServiceServer).OrdenarChunk(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.LibroService/OrdenarChunk",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LibroServiceServer).OrdenarChunk(ctx, req.(*SendChunk))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _LibroService_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.LibroService",
+	HandlerType: (*LibroServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "downloadChunk",
-			Handler:    _OrdenService_DownloadChunk_Handler,
+			Handler:    _LibroService_DownloadChunk_Handler,
+		},
+		{
+			MethodName: "sendPropuesta",
+			Handler:    _LibroService_SendPropuesta_Handler,
+		},
+		{
+			MethodName: "OrdenarChunk",
+			Handler:    _LibroService_OrdenarChunk_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "uploadBook",
-			Handler:       _OrdenService_UploadBook_Handler,
+			Handler:       _LibroService_UploadBook_Handler,
 			ClientStreams: true,
 		},
 		{
 			StreamName:    "getAddressChunks",
-			Handler:       _OrdenService_GetAddressChunks_Handler,
+			Handler:       _LibroService_GetAddressChunks_Handler,
 			ServerStreams: true,
 		},
 	},
