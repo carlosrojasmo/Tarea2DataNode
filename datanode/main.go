@@ -34,6 +34,25 @@ func Newlibro(nombre string,cantidadChunks int) libro{
 	return nuevoLibro
 }
 
+func (s* server) UploadBook(stream pb.OrdenService_UploadBookServer) error {
+	ChunksPorEnviar := []pb.SendChunk{}
+	for {
+		chunk, err := stream.Recv()
+		if err == io.EOF { // no hay mas chunks
+			//enviar la propuesta
+
+		} else if err != nil { // hubo un problema
+			fmt.Println(err)
+			return err
+
+		}
+
+		ChunksPorEnviar = append(ChunksPorEnviar,chunk)
+
+
+	}
+	return nil
+}
 func main() { 
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
