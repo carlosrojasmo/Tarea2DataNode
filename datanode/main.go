@@ -72,10 +72,34 @@ func (s* server) UploadBook(stream pb.OrdenService_UploadBookServer) error {
     		c := pb.NewLibroServiceClient(conn)
     		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
-			distribucionRevisada , err :=c.SendPropuesta(ctx,pb.Propuesta{Chunk : distribucion})
+			distribucionRevisada , err := c.SendPropuesta(ctx,pb.Propuesta{Chunk : distribucion})
 			if err != nil{
 				fmt.Println(err)
 			}
+
+			ChunksPorDistribuir := distribucionRevisada.GetChunk()
+
+			for i,ch := range ChunksPorDistribuir{
+				destiny := ch.GetIpMaquina()
+
+				if destiny == addressDataNodeSelf{
+					//guardar aqui
+				} else {
+					conn2, err := grpc.Dial(destiny, grpc.WithInsecure(), grpc.WithBlock())
+    				if err != nil {
+    					log.Fatalf("did not connect: %v", err)
+    				}
+    				defer conn2.Close()
+    				c := pb.NewLibroServiceClient(conn2)
+    				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+					defer cancel()
+					_ , err := c.OrdenarChunk(ChunksPorEnviar[i])
+					if err := nil {
+						fmt.Println(err)
+					}
+				}
+			}
+			return nil
 
 		} else if err != nil { // hubo un problema
 			fmt.Println(err)
