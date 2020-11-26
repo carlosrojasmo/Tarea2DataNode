@@ -109,7 +109,8 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 
 		}
 
-		ChunksPorEnviar = append(ChunksPorEnviar,chunk)
+		ChunksPorEnviar = append(ChunksPorEnviar,pb.SendChunk{Name : chunk.GetName(),Offset : chunk.GetOffset(), 
+			Chunk : chunk.GetChunk()})
 
 
 	}
