@@ -19,14 +19,16 @@ const (
 	addressDataNode1  = "10.10.28.12:50051"
 	addressDataNode2  = "10.10.28.13:50051"
 )
-
-var dataNodes = [3]string{addressDataNodeSelf,addressDataNode1,addressDataNode2}
-
 type server struct {
 	pb.UnimplementedLibroServiceServer
 }
+
+var dataNodes = [3]string{addressDataNodeSelf,addressDataNode1,addressDataNode2}
+var status = "Ok"
 var LibroAux= []Chunk{}
 var LibroChunks= make(map[string][]Chunk) //Nose si este diccionario funca bien
+
+
 
 type Chunk struct{
 	offset int
@@ -116,10 +118,38 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 	}
 	return nil
 }
+func (s* server) VerStatus(ctx context.Context, status *pb.Status) (*pb.Status, error){
+	envioStatus:= Status()
+	statusEnviar:=pb.Status{Status:envioStatus}
+	return &statusEnviar,nil
+}
+
+func (s* server) OrdenarChunk(ctx context.Context, chunkRecibido *pb.SendChunk ) (*pb.ReplyEmpty, error){
+	chunkEscribir,chunkOffset,chunkLibro:=chunkRecibido.Chunk,chunkRecibido.Offset,chunkRecibido.Name
+	newChunk:=Chunk{offset:int(chunkOffset) , data:chunkEscribir}
+	GuardarChunk(newChunk)
+	
+}
+
+
 func GuardarChunk(chunk Chunk)[]Chunk {
 	LibroAux=append(LibroAux,chunk)
 	return LibroAux
-} 
+}
+
+func Status()string{
+	nChunks:= 0
+	for i,libro:=range LibroChunks{
+		nChunks=nChunks+len(libro)
+		fmt.Println(i)
+	}
+	if nChunks>=200000{
+		status="error"
+	}else {
+		status="ok"
+	}
+	return status 
+}
 
 
 func main() { 
