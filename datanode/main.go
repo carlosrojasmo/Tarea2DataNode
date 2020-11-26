@@ -8,6 +8,8 @@ import (
 	"google.golang.org/grpc"
 	pb "../proto"
 	"fmt"
+	"time"
+	"io"
 )
 
 const (
@@ -21,7 +23,7 @@ const (
 var dataNodes = [3]string{addressDataNodeSelf,addressDataNode1,addressDataNode2}
 
 type server struct {
-	pb.UnimplementedOrdenServiceServer
+	pb.UnimplementedLibroServiceServer
 }
 var LibroAux= []Chunk{}
 var LibroChunks= make(map[string][]Chunk) //Nose si este diccionario funca bien
@@ -42,7 +44,7 @@ func Newlibro(nombre string,cantidadChunks int) libro{
 	return nuevoLibro
 }
 
-func (s* server) UploadBook(stream pb.OrdenService_UploadBookServer) error {
+func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 	ChunksPorEnviar := []pb.SendChunk{}
 	for {
 		chunk, err := stream.Recv()
@@ -93,8 +95,8 @@ func (s* server) UploadBook(stream pb.OrdenService_UploadBookServer) error {
     				c := pb.NewLibroServiceClient(conn2)
     				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 					defer cancel()
-					_ , err := c.OrdenarChunk(ChunksPorEnviar[i])
-					if err := nil {
+					_ , err = c.OrdenarChunk(ChunksPorEnviar[i])
+					if err == nil {
 						fmt.Println(err)
 					}
 				}
@@ -113,13 +115,19 @@ func (s* server) UploadBook(stream pb.OrdenService_UploadBookServer) error {
 	}
 	return nil
 }
+func GuardarChunk(chunk Chunk)[]Chunk {
+	LibroAux=append(LibroAux,chunk)
+	return LibroAux
+} 
+
+
 func main() { 
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
-	pb.RegisterOrdenServiceServer(s, &server{})
+	pb.RegisterLibroServiceServer(s, &server{})
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
