@@ -95,9 +95,16 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
     				}
     				defer conn2.Close()
     				c := pb.NewLibroServiceClient(conn2)
+    				ind := 0
+    				for j,un := range ChunksPorEnviar{
+    					if ch.GetOffset() == un.GetOffset(){
+    						ind = j
+    						break
+    					}
+    				}
     				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 					defer cancel()
-					_ , err = c.OrdenarChunk(ctx,&ChunksPorEnviar[i])
+					_ , err = c.OrdenarChunk(ctx,&ChunksPorEnviar[ind])
 					if err == nil {
 						fmt.Println(err)
 					}
