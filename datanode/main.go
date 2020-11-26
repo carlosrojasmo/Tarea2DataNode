@@ -59,10 +59,10 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
     			prop = append(prop,r1.Intn(len(dataNodes)))
     		}
              
-            distribucion := []*pb.PropuestaChunk
+            distribucion := []*pb.PropuestaChunk{}
 
     		for i, add := range prop {
-    			distribucion = append(distribucion,pb.PropuestaChunk{Offset : ChunksPorEnviar[i].GetOffset(),
+    			distribucion = append(distribucion,&pb.PropuestaChunk{Offset : ChunksPorEnviar[i].GetOffset(),
     				IpMaquina : dataNodes[add],NombreLibro : ChunksPorEnviar[i].GetName()})
     		}
 
@@ -74,7 +74,7 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
     		c := pb.NewLibroServiceClient(conn)
     		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
-			distribucionRevisada , err := c.SendPropuesta(ctx,pb.Propuesta{Chunk : distribucion})
+			distribucionRevisada , err := c.SendPropuesta(ctx,&pb.Propuesta{Chunk : distribucion})
 			if err != nil{
 				fmt.Println(err)
 			}
@@ -95,7 +95,7 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
     				c := pb.NewLibroServiceClient(conn2)
     				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 					defer cancel()
-					_ , err = c.OrdenarChunk(ChunksPorEnviar[i])
+					_ , err = c.OrdenarChunk(ctx,&ChunksPorEnviar[i])
 					if err == nil {
 						fmt.Println(err)
 					}
