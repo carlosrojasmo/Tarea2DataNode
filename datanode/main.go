@@ -25,7 +25,6 @@ type server struct {
 
 var dataNodes = [3]string{addressDataNodeSelf,addressDataNode1,addressDataNode2}
 var status = "Ok"
-var LibroAux= []Chunk{}
 var LibroChunks= make(map[string][]Chunk) //Nose si este diccionario funca bien
 
 
@@ -35,16 +34,7 @@ type Chunk struct{
 	data []byte
 }
 
-type libro struct{
-	nombre string
-	cantidadChunks int
-}
-//Primero cuando lleguen los chunks se acumularan en LibroAUX , luego al llegar al offset final pasara la siguiente funcion
-func Newlibro(nombre string,cantidadChunks int) libro{
-	nuevoLibro:=libro{nombre:nombre,cantidadChunks:cantidadChunks}
-	LibroChunks[nuevoLibro.nombre]=LibroAux
-	return nuevoLibro
-}
+
 
 func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 	ChunksPorEnviar := []pb.SendChunk{}
@@ -134,15 +124,13 @@ func (s* server) VerStatus(ctx context.Context, status *pb.Status) (*pb.Status, 
 func (s* server) OrdenarChunk(ctx context.Context, chunkRecibido *pb.SendChunk ) (*pb.ReplyEmpty, error){
 	chunkEscribir,chunkOffset,chunkLibro:=chunkRecibido.Chunk,chunkRecibido.Offset,chunkRecibido.Name
 	newChunk:=Chunk{offset:int(chunkOffset) , data:chunkEscribir}
-	GuardarChunk(newChunk)
-	
+	LibroChunks[chunkLibro]=append(LibroChunks[chunkLibro],newChunk)
+	reply:=pb.ReplyEmpty{Ok:int64(1)}
+	return &reply,nil
 }
 
 
-func GuardarChunk(chunk Chunk)[]Chunk {
-	LibroAux=append(LibroAux,chunk)
-	return LibroAux
-}
+
 
 func Status()string{
 	nChunks:= 0
