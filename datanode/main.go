@@ -10,20 +10,19 @@ import (
 	"fmt"
 	"time"
 	"io"
+	"os"
+	"bufio"
+	"strings"
 )
 
-const (
-	port = ":50051" //Quiza debamos usar distintos puertos segun en que trabajamos
-	addressNameNode  = "10.10.28.10:50051"
-	addressDataNodeSelf  = "10.10.28.11:50051"
-	addressDataNode1  = "10.10.28.12:50051"
-	addressDataNode2  = "10.10.28.13:50051"
-)
+var port = strings.Split(ReadAddress()[0],":")[1] //Quiza debamos usar distintos puertos segun en que trabajamos
+var addressNameNode= "10.10.28.10:50051"
+
 type server struct {
 	pb.UnimplementedLibroServiceServer
 }
 
-var dataNodes = [3]string{addressDataNodeSelf,addressDataNode1,addressDataNode2}
+var dataNodes = []string{}
 var status = "Ok"
 var LibroChunks= make(map[string][]Chunk) //Nose si este diccionario funca bien
 
@@ -34,7 +33,28 @@ type Chunk struct{
 	data []byte
 }
 
+func ReadAddress() []string{
+    f, err := os.Open("address.txt")
+    listaAddress:= []string{}
 
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    defer f.Close()
+
+    scanner := bufio.NewScanner(f)
+
+    for scanner.Scan() {
+        listaAddress=append(listaAddress,scanner.Text())
+        
+    }
+
+    if err := scanner.Err(); err != nil {
+        log.Fatal(err)
+    }
+    return listaAddress
+}
 
 func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 	ChunksPorEnviar := []pb.SendChunk{}
@@ -75,9 +95,20 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 
 			for i,ch := range ChunksPorDistribuir{
 				destiny := ch.GetIpMaquina()
+				fmt.Println(i)
+				ind := 0
+				for j,un := range ChunksPorEnviar{
+					if ch.GetOffset() == un.GetOffset(){
+						ind = j
+						break
+					}
+				}
+				if destiny == dataNodes[0]{
+					chunkRecibido:=ChunksPorEnviar[ind]
+					chunkEscribir,chunkOffset,chunkLibro:=chunkRecibido.Chunk,chunkRecibido.Offset,chunkRecibido.Name
+					newChunk:=Chunk{offset:int(chunkOffset) , data:chunkEscribir}
+					LibroChunks[chunkLibro]=append(LibroChunks[chunkLibro],newChunk)
 
-				if destiny == addressDataNodeSelf{
-					//guardar aqui
 				} else {
 					conn2, err := grpc.Dial(destiny, grpc.WithInsecure(), grpc.WithBlock())
     				if err != nil {
@@ -85,13 +116,6 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
     				}
     				defer conn2.Close()
     				c := pb.NewLibroServiceClient(conn2)
-    				ind := 0
-    				for j,un := range ChunksPorEnviar{
-    					if ch.GetOffset() == un.GetOffset(){
-    						ind = j
-    						break
-    					}
-    				}
     				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 					defer cancel()
 					_ , err = c.OrdenarChunk(ctx,&ChunksPorEnviar[ind])
@@ -113,7 +137,6 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 
 
 	}
-	return nil
 }
 func (s* server) VerStatus(ctx context.Context, status *pb.Status) (*pb.Status, error){
 	envioStatus:= Status()
@@ -148,6 +171,7 @@ func Status()string{
 
 
 func main() { 
+	dataNodes=ReadAddress()
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
