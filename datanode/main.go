@@ -108,6 +108,8 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 					chunkEscribir,chunkOffset,chunkLibro:=chunkRecibido.Chunk,chunkRecibido.Offset,chunkRecibido.Name
 					newChunk:=Chunk{offset:int(chunkOffset) , data:chunkEscribir}
 					LibroChunks[chunkLibro]=append(LibroChunks[chunkLibro],newChunk)
+					fmt.Println("Cargado el libro")
+					fmt.Println(LibroChunks)
 
 				} else {
 					conn2, err := grpc.Dial(destiny, grpc.WithInsecure(), grpc.WithBlock())
@@ -123,6 +125,12 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 					}
 				}
 			}
+			err = stream.SendAndClose(&pb.ReplyEmpty{Ok : 1})
+			if err != nil {
+				fmt.Println(err)
+				return err
+			}
+			fmt.Println("Se subio el Libro")
 			return nil
 
 		} else if err != nil { // hubo un problema
@@ -147,6 +155,7 @@ func (s* server) OrdenarChunk(ctx context.Context, chunkRecibido *pb.SendChunk )
 	newChunk:=Chunk{offset:int(chunkOffset) , data:chunkEscribir}
 	LibroChunks[chunkLibro]=append(LibroChunks[chunkLibro],newChunk)
 	fmt.Println("Cargado el libro")
+	fmt.Println(LibroChunks)
 	reply:=pb.ReplyEmpty{Ok:int64(1)}
 	return &reply,nil
 }
