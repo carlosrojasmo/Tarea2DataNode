@@ -74,6 +74,7 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
     		}
              
             distribucion := []*pb.PropuestaChunk{}
+            ChunksPorDistribuir := []*pb.PropuestaChunk{}
 
     		for i, add := range prop {
     			distribucion = append(distribucion,&pb.PropuestaChunk{Offset : ChunksPorEnviar[i].GetOffset(),
@@ -82,30 +83,72 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 
     		if funcionamiento == "C"{//Version centralizada
 
-    		conn, err := grpc.Dial(addressNameNode, grpc.WithInsecure(), grpc.WithBlock())
-    		if err != nil {
-    			log.Fatalf("did not connect: %v", err)
-    		}
-    		defer conn.Close()
-    		c := pb.NewLibroServiceClient(conn)
-    		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-			defer cancel()
-			distribucionRevisada , err := c.SendPropuesta(ctx,&pb.Propuesta{Chunk : distribucion})
-			if err != nil{
-				fmt.Println(err)
-			}
+    			conn, err := grpc.Dial(addressNameNode, grpc.WithInsecure(), grpc.WithBlock())
+    			if err != nil {
+    				log.Fatalf("did not connect: %v", err)
+    			}
+    			defer conn.Close()
+    			c := pb.NewLibroServiceClient(conn)
+    			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+				defer cancel()
+				distribucionRevisada , err := c.SendPropuesta(ctx,&pb.Propuesta{Chunk : distribucion})
+				if err != nil{
+					fmt.Println(err)
+				}
 
-			ChunksPorDistribuir := distribucionRevisada.GetChunk()
+				ChunksPorDistribuir = distribucionRevisada.GetChunk()
+				
 		    } else { //Version distribuidad
 
 		    	for { //
-		    		respuestas := []bool{}
+		    		respuestas := []string{}
 
 		    		for _,dir := range dataNodes[1:] { //Enviamos la distribucion a cada nodo y guardamos sus respuestas
-		    			
+		    			conn, err := grpc.Dial(dir, grpc.WithInsecure(), grpc.WithBlock())
+    					if err != nil {
+    						fmt.Println(err)
+    					} else{
+    						defer conn.Close()
+    						c := pb.NewLibroServiceClient(conn)
+    						ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+							defer cancel()
+							stat , err := c.VerStatus2(ctx,&pb.Propuesta{Chunk : distribucion})
+							if err != nil{
+								fmt.Println(err)
+							}
+							respuestas = append(respuestas,stat.GetStatus())
+						}
+
+		    		}
+
+		    		acepto := true
+
+		    		for i,res := range respuestas { //modificamos la propuesta
+		    			if res != "ok"{
+		    				for j,p := range distribucion{
+		    					if p.GetIpMaquina() == dataNodes[i + 1]{
+		    						newadd = r1.Intn(len(dataNodes))
+		    						for p.GetIpMaquina() == dataNodes[newadd]{
+		    							newadd = r1.Intn(len(dataNodes))
+		    						}
+                                    distribucion[j] = pb.PropuestaChunk{Offset :p.GetOffset(),
+                                    	IpMaquina : dataNodes[newadd],NombreLibro : p.GetName()}
+                                    	acepto = false
+		    						break
+		    					}
+		    				}
+		    			}
+
+		    		}
+
+		    		if acepto {
+		    			ChunksPorDistribuir = distribucion
+		    			break
 		    		}
 
 		    	}
+
+
 		    }
 
 			for _,ch := range ChunksPorDistribuir{

@@ -11,6 +11,7 @@ service LibroService {
   rpc sendPropuesta(Propuesta) returns (Propuesta);
   rpc OrdenarChunk(sendChunk) returns (replyEmpty);
   rpc verStatus(Status) returns (Status);
+  rpc verStatus2(Propuesta) returns (Status);
 }
 
 message Status{
