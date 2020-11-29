@@ -13,6 +13,7 @@ import (
 	"os"
 	"bufio"
 	"strings"
+	"io/ioutil"
 )
 
 var port = ":"+strings.Split(ReadAddress()[0],":")[1] //Quiza debamos usar distintos puertos segun en que trabajamos
@@ -169,12 +170,27 @@ func (s* server) OrdenarChunk(ctx context.Context, chunkRecibido *pb.SendChunk )
 	LibroChunks[chunkLibro]=append(LibroChunks[chunkLibro],newChunk)
 	fmt.Println("Cargado el libro")
 	fmt.Println(LibroChunks)
+	archivoChunk, err := os.OpenFile(chunkLibro+":/"+fmt.Sprint(chunkOffset), os.O_APPEND|os.O_WRONLY, 0600)
+    if err != nil {
+        panic(err)
+    }
+	defer archivoChunk.Close()
+	if _, err = archivoChunk.Write(chunkEscribir); err != nil { // puede ser esta una linea error debido al write, probar pagina penca si no sirve
+		panic(err)
+	}
 	reply:=pb.ReplyEmpty{Ok:int64(1)}
 	return &reply,nil
 }
 
-
-
+func (s* server ) DownloadChunk(ctx context.Context, chunkID *pb.ChunkId) (*pb.SendChunk, error){
+	IDChunk:=chunkID.Id
+	chunkPedido, err := ioutil.ReadFile(IDChunk) //revisar si lo devuelve en cadena de bits
+	if err != nil {
+		fmt.Print(err)
+	}
+	newSendChunk:= pb.SendChunk{Chunk:chunkPedido}
+	return &newSendChunk,nil
+}
 
 func Status()string{
 	fmt.Println("Viendo status..")
