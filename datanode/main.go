@@ -25,7 +25,7 @@ type server struct {
 var dataNodes = []string{}
 var status = "Ok"
 var LibroChunks= make(map[string][]Chunk) //Nose si este diccionario funca bien
-
+var funcionamiento = "EsperaInput"
 
 
 type Chunk struct{
@@ -79,6 +79,8 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
     				IpMaquina : dataNodes[add],NombreLibro : ChunksPorEnviar[i].GetName()})
     		}
 
+    		if funcionamiento == "C"{//Version centralizada
+
     		conn, err := grpc.Dial(addressNameNode, grpc.WithInsecure(), grpc.WithBlock())
     		if err != nil {
     			log.Fatalf("did not connect: %v", err)
@@ -93,6 +95,17 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 			}
 
 			ChunksPorDistribuir := distribucionRevisada.GetChunk()
+		    } else { //Version distribuidad
+
+		    	for { //
+		    		respuestas := []bool{}
+
+		    		for _,dir := range dataNodes[1:] { //Enviamos la distribucion a cada nodo y guardamos sus respuestas
+		    			
+		    		}
+
+		    	}
+		    }
 
 			for _,ch := range ChunksPorDistribuir{
 				destiny := ch.GetIpMaquina()
@@ -179,6 +192,20 @@ func Status()string{
 
 
 func main() { 
+	reader := bufio.NewReader(os.Stdin)
+    fmt.Println("DataNode")
+    fmt.Println("---------------------")
+
+    
+    fmt.Print("Indique si desea el funcionamiento centralizado o distribuido (C o D) : ")//se pide si es Downloader y Uploader
+    input1, _ := reader.ReadString('\n')
+    input1 = strings.Replace(input1, "\n", "", -1)
+    input1 = strings.Replace(input1, "\r", "", -1)
+    funcionamiento = input1
+    if funcionamiento != "C" && funcionamiento != "D"{
+    	log.Fatalf("Ingreso mal el tipo de funcionamiento ,abortando")
+    }
+
 	dataNodes=ReadAddress()
 	fmt.Println(dataNodes,"namenode: ",addressNameNode)
 	lis, err := net.Listen("tcp", port)
