@@ -138,6 +138,7 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 		    		for _,dir := range dataNodes[1:] { //Enviamos la distribucion a cada nodo y guardamos sus respuestas
 		    			conn, err := grpc.Dial(dir, grpc.WithInsecure(), grpc.WithBlock())
     					if err != nil {
+    						respuestas = append(respuestas,"notOk")
     						fmt.Println(err)
     					} else{
     						defer conn.Close()
@@ -146,9 +147,11 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 							defer cancel()
 							stat , err := c.VerStatus2(ctx,&pb.Propuesta{Chunk : distribucion})
 							if err != nil{
+								respuestas = append(respuestas,"notOk")
 								fmt.Println(err)
+							} else {
+								respuestas = append(respuestas,stat.GetStatus())
 							}
-							respuestas = append(respuestas,stat.GetStatus())
 						}
 
 		    		}
@@ -175,6 +178,18 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 
 		    		if acepto {
 		    			ChunksPorDistribuir = distribucion
+		    			conn, err := grpc.Dial(addressNameNode, grpc.WithInsecure(), grpc.WithBlock())
+    					if err != nil {
+    						fmt.Println(err)
+    					}
+    					defer conn.Close()
+    					c := pb.NewLibroServiceClient(conn)
+    					ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+						defer cancel()
+						_, err := c.VerStatus2(ctx,&pb.Propuesta{Chunk : distribucion})
+						if err != nil{
+							fmt.Println(err)
+						}
 		    			break
 		    		}
 
