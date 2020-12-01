@@ -24,6 +24,7 @@ type LibroServiceClient interface {
 	OrdenarChunk(ctx context.Context, in *SendChunk, opts ...grpc.CallOption) (*ReplyEmpty, error)
 	VerStatus(ctx context.Context, in *Status, opts ...grpc.CallOption) (*Status, error)
 	VerStatus2(ctx context.Context, in *Propuesta, opts ...grpc.CallOption) (*Status, error)
+	EstadoLog(ctx context.Context, in *EstadoNode, opts ...grpc.CallOption) (*EstadoNode, error)
 }
 
 type libroServiceClient struct {
@@ -145,6 +146,15 @@ func (c *libroServiceClient) VerStatus2(ctx context.Context, in *Propuesta, opts
 	return out, nil
 }
 
+func (c *libroServiceClient) EstadoLog(ctx context.Context, in *EstadoNode, opts ...grpc.CallOption) (*EstadoNode, error) {
+	out := new(EstadoNode)
+	err := c.cc.Invoke(ctx, "/proto.LibroService/estadoLog", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LibroServiceServer is the server API for LibroService service.
 // All implementations must embed UnimplementedLibroServiceServer
 // for forward compatibility
@@ -156,6 +166,7 @@ type LibroServiceServer interface {
 	OrdenarChunk(context.Context, *SendChunk) (*ReplyEmpty, error)
 	VerStatus(context.Context, *Status) (*Status, error)
 	VerStatus2(context.Context, *Propuesta) (*Status, error)
+	EstadoLog(context.Context, *EstadoNode) (*EstadoNode, error)
 	mustEmbedUnimplementedLibroServiceServer()
 }
 
@@ -183,6 +194,9 @@ func (UnimplementedLibroServiceServer) VerStatus(context.Context, *Status) (*Sta
 }
 func (UnimplementedLibroServiceServer) VerStatus2(context.Context, *Propuesta) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerStatus2 not implemented")
+}
+func (UnimplementedLibroServiceServer) EstadoLog(context.Context, *EstadoNode) (*EstadoNode, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EstadoLog not implemented")
 }
 func (UnimplementedLibroServiceServer) mustEmbedUnimplementedLibroServiceServer() {}
 
@@ -334,6 +348,24 @@ func _LibroService_VerStatus2_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LibroService_EstadoLog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EstadoNode)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LibroServiceServer).EstadoLog(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.LibroService/EstadoLog",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LibroServiceServer).EstadoLog(ctx, req.(*EstadoNode))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _LibroService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.LibroService",
 	HandlerType: (*LibroServiceServer)(nil),
@@ -357,6 +389,10 @@ var _LibroService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "verStatus2",
 			Handler:    _LibroService_VerStatus2_Handler,
+		},
+		{
+			MethodName: "estadoLog",
+			Handler:    _LibroService_EstadoLog_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
