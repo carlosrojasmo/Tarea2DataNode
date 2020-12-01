@@ -27,11 +27,16 @@ var dataNodes = []string{}
 var status = "Ok"
 var LibroChunks= make(map[string][]Chunk) //Nose si este diccionario funca bien
 var funcionamiento = "EsperaInput"
-
+var estadoCritico = Estado{status:"LIBERADA"}
 
 type Chunk struct{
 	offset int
 	data []byte
+}
+
+type Estado struct{
+	status string
+	timestamp int64 
 }
 
 func ReadAddress() []string{
@@ -154,11 +159,11 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 		    			if res != "ok"{
 		    				for j,p := range distribucion{
 		    					if p.GetIpMaquina() == dataNodes[i + 1]{
-		    						newadd = r1.Intn(len(dataNodes))
+		    						newadd := r1.Intn(len(dataNodes))
 		    						for p.GetIpMaquina() == dataNodes[newadd]{
 		    							newadd = r1.Intn(len(dataNodes))
 		    						}
-                                    distribucion[j] = pb.PropuestaChunk{Offset :p.GetOffset(),
+                                    distribucion[j] = &pb.PropuestaChunk{Offset :p.GetOffset(),
                                     	IpMaquina : dataNodes[newadd],NombreLibro : p.GetName()}
                                     	acepto = false
 		    						break
@@ -262,6 +267,29 @@ func (s* server ) DownloadChunk(ctx context.Context, chunkID *pb.ChunkId) (*pb.S
 	return &newSendChunk,nil
 }
 
+
+func (s* server) EstadoLog(ctx context.Context, peticion *pb.EstadoNode ) (*pb.EstadoNode, error){
+	horaPeticion:= peticion.Timestamp
+	estadoCriticoNode:=pb.EstadoNode{}
+	for{
+		if (estadoCritico.status=="LIBERADA"){
+			estadoCriticoNode=pb.EstadoNode{Status:estadoCritico.status,Timestamp:estadoCritico.timestamp}
+			break
+		}else if (estadoCritico.status=="BUSCADA"){
+			if (horaPeticion<=estadoCritico.timestamp){
+				estadoCriticoNode=pb.EstadoNode{Status:"LIBERADA",Timestamp:estadoCritico.timestamp}
+				break
+			}else{
+				time.Sleep(time.Second)
+			}
+		}else{
+			time.Sleep(time.Second)
+		}
+	}
+	return &estadoCriticoNode,nil
+
+
+}
 func Status()string{
 	fmt.Println("Viendo status..")
 	nChunks:= 0
