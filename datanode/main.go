@@ -57,6 +57,32 @@ func ReadAddress() []string{
     return listaAddress
 }
 
+func (s* server) VerStatus2(ctx context.Context,prop *pb.Propuesta) (*Status, error) {
+	distribucion := prop.GetChunk()
+	status := statusRevisar(distribucion)
+
+	return status, nil
+}
+
+func statusRevisar(distribucion []*pb.PropuestaChunk) string{
+	a := "ok"
+	nChunks:= 0
+	for _,libro:=range LibroChunks{
+		nChunks=nChunks+len(libro)
+	}
+	for _,p := range distribucion {
+		if p.GetIpMaquina() == dataNodes[0]{
+			nChunks = nChunks + 1
+		}
+	}
+
+	if nChunks>=200000{
+		a ="not ok"
+	}
+
+	return a
+}
+
 func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 	fmt.Println("Subiendo libro...")
 	ChunksPorEnviar := []pb.SendChunk{}
@@ -102,6 +128,7 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 
 		    	for { //
 		    		respuestas := []string{}
+		    		respuestas = append(respuestas,statusRevisar(distribucion))
 
 		    		for _,dir := range dataNodes[1:] { //Enviamos la distribucion a cada nodo y guardamos sus respuestas
 		    			conn, err := grpc.Dial(dir, grpc.WithInsecure(), grpc.WithBlock())
