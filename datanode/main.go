@@ -200,8 +200,7 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 							}
 							}
 							
-						
-
+						estadoCritico.status="TOMADA"	
 						ChunksPorDistribuir = distribucion
 		    			conn, err := grpc.Dial(addressNameNode, grpc.WithInsecure(), grpc.WithBlock())
     					if err != nil {
@@ -215,6 +214,7 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 						if err != nil{
 							fmt.Println(err)
 						}
+						estadoCritico.status="LIBERADA"
 		    			break
 		    		}
 
