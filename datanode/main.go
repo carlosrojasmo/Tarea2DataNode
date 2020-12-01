@@ -62,11 +62,11 @@ func ReadAddress() []string{
     return listaAddress
 }
 
-func (s* server) VerStatus2(ctx context.Context,prop *pb.Propuesta) (*Status, error) {
+func (s* server) VerStatus2(ctx context.Context,prop *pb.Propuesta) (*pb.Status, error) {
 	distribucion := prop.GetChunk()
 	status := statusRevisar(distribucion)
-
-	return status, nil
+	statusMensaje:= pb.Status{Status:status}
+	return &statusMensaje, nil
 }
 
 func statusRevisar(distribucion []*pb.PropuestaChunk) string{
@@ -167,7 +167,7 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 		    							newadd = r1.Intn(len(dataNodes))
 		    						}
                                     distribucion[j] = &pb.PropuestaChunk{Offset :p.GetOffset(),
-                                    	IpMaquina : dataNodes[newadd],NombreLibro : p.GetName()}
+                                    	IpMaquina : dataNodes[newadd],NombreLibro : p.GetNombreLibro()}
                                     	acepto = false
 		    						break
 		    					}
@@ -177,7 +177,32 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 		    		}
 
 		    		if acepto {
-		    			ChunksPorDistribuir = distribucion
+						estadoCritico.status="BUSCADA"
+						estadoCritico.timestamp=time.Now().UnixNano()
+						for i,nodo:=range dataNodes{
+							if i==0{
+							}else{
+								connNode,err := grpc.Dial(nodo,grpc.WithInsecure(),grpc.WithBlock())
+								if err !=nil{
+									fmt.Println("nodo : ",nodo," caido")
+								}
+								defer connNode.Close()
+								pregunta:= pb.NewLibroServiceClient(connNode)
+								ctx, cancel:=context.WithTimeout(context.Background(),time.Second)
+								defer cancel()
+								respuesta,err:= pregunta.EstadoLog(ctx,&pb.EstadoNode{Status:estadoCritico.status,Timestamp:estadoCritico.timestamp})
+								if err !=nil{
+									fmt.Println("nodo : ",nodo," caido")
+								}
+								if respuesta.Status != "LIBERADA"{
+									fmt.Println("nodo : ",nodo," no liberado")
+								}
+							}
+							}
+							
+						
+
+						ChunksPorDistribuir = distribucion
 		    			conn, err := grpc.Dial(addressNameNode, grpc.WithInsecure(), grpc.WithBlock())
     					if err != nil {
     						fmt.Println(err)
@@ -186,7 +211,7 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
     					c := pb.NewLibroServiceClient(conn)
     					ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 						defer cancel()
-						_, err := c.VerStatus2(ctx,&pb.Propuesta{Chunk : distribucion})
+						_, err = c.VerStatus2(ctx,&pb.Propuesta{Chunk : distribucion})
 						if err != nil{
 							fmt.Println(err)
 						}
@@ -288,11 +313,11 @@ func (s* server) EstadoLog(ctx context.Context, peticion *pb.EstadoNode ) (*pb.E
 	estadoCriticoNode:=pb.EstadoNode{}
 	for{
 		if (estadoCritico.status=="LIBERADA"){
-			estadoCriticoNode=pb.EstadoNode{Status:estadoCritico.status,Timestamp:estadoCritico.timestamp}
+			estadoCriticoNode=pb.EstadoNode{Status:estadoCritico.status}
 			break
 		}else if (estadoCritico.status=="BUSCADA"){
 			if (horaPeticion<=estadoCritico.timestamp){
-				estadoCriticoNode=pb.EstadoNode{Status:"LIBERADA",Timestamp:estadoCritico.timestamp}
+				estadoCriticoNode=pb.EstadoNode{Status:"LIBERADA"}
 				break
 			}else{
 				time.Sleep(time.Second)
