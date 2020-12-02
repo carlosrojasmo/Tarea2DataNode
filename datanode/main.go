@@ -18,7 +18,7 @@ import (
 )
 
 var port = ":"+strings.Split(readAddress()[0],":")[1] //Quiza debamos usar distintos puertos segun en que trabajamos
-var addressNameNode= "10.10.28.10:50055"
+var addressNameNode= "10.10.28.10:50051"
 
 type server struct {
 	pb.UnimplementedLibroServiceServer
