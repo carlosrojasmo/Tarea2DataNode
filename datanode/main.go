@@ -14,6 +14,7 @@ import (
 	"bufio"
 	"strings"
 	"io/ioutil"
+	"unsafe"
 )
 
 var port = ":"+strings.Split(ReadAddress()[0],":")[1] //Quiza debamos usar distintos puertos segun en que trabajamos
@@ -237,8 +238,8 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 					newChunk:=Chunk{offset:int(chunkOffset) , data:chunkEscribir}
 					LibroChunks[chunkLibro]=append(LibroChunks[chunkLibro],newChunk)
 					fmt.Println("Cargado el libro")
-					fmt.Println(LibroChunks)
-					archivoChunk, err := os.OpenFile(chunkLibro+":-"+fmt.Sprint(chunkOffset), os.O_APPEND|os.O_WRONLY, 0600)
+					
+					archivoChunk, err := os.Create(strings.Split(chunkLibro,".")[0]+"--"+fmt.Sprint(chunkOffset))
 				    if err != nil {
 				        panic(err)
 				    }
@@ -247,7 +248,6 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 						panic(err)
 					}
 					fmt.Println("Cargado el libro")
-					fmt.Println(LibroChunks)
 
 				} else {
 					conn2, err := grpc.Dial(destiny, grpc.WithInsecure(), grpc.WithBlock())
@@ -294,7 +294,8 @@ func (s* server) OrdenarChunk(ctx context.Context, chunkRecibido *pb.SendChunk )
 	LibroChunks[chunkLibro]=append(LibroChunks[chunkLibro],newChunk)
 	fmt.Println("Cargado el libro")
 	fmt.Println(LibroChunks)
-	archivoChunk, err := os.OpenFile(chunkLibro+":-"+fmt.Sprint(chunkOffset), os.O_APPEND|os.O_WRONLY, 0600)
+
+	archivoChunk, err := os.Create(strings.Split(chunkLibro,".")[0]+"--"+fmt.Sprint(chunkOffset))
     if err != nil {
         panic(err)
     }
@@ -313,6 +314,8 @@ func (s* server ) DownloadChunk(ctx context.Context, chunkID *pb.ChunkId) (*pb.S
 		fmt.Print(err)
 	}
 	newSendChunk:= pb.SendChunk{Chunk:chunkPedido}
+	chunkInfo := unsafe.Sizeof(newSendChunk.GetChunk())
+	fmt.Println("Chunkinfo: "+fmt.Sprint(chunkInfo))
 	return &newSendChunk,nil
 }
 
