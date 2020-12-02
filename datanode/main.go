@@ -17,8 +17,8 @@ import (
 	"unsafe"
 )
 
-var port = ":"+strings.Split(ReadAddress()[0],":")[1] //Quiza debamos usar distintos puertos segun en que trabajamos
-var addressNameNode= "localhost:50055"
+var port = ":"+strings.Split(readAddress()[0],":")[1] //Quiza debamos usar distintos puertos segun en que trabajamos
+var addressNameNode= "10.10.28.10:50055"
 
 type server struct {
 	pb.UnimplementedLibroServiceServer
@@ -26,21 +26,21 @@ type server struct {
 
 var dataNodes = []string{}
 var status = "Ok"
-var LibroChunks= make(map[string][]Chunk) //Nose si este diccionario funca bien
+var libroChunks= make(map[string][]aChunk) //Nose si este diccionario funca bien
 var funcionamiento = "EsperaInput"
-var estadoCritico = Estado{status:"LIBERADA"}
+var estadoCritico = estado{status:"LIBERADA"}
 
-type Chunk struct{
+type aChunk struct{
 	offset int
 	data []byte
 }
 
-type Estado struct{
+type estado struct{
 	status string
 	timestamp int64 
 }
 
-func ReadAddress() []string{
+func readAddress() []string{
     f, err := os.Open("address.txt")
     listaAddress:= []string{}
 
@@ -73,7 +73,7 @@ func (s* server) VerStatus2(ctx context.Context,prop *pb.Propuesta) (*pb.Status,
 func statusRevisar(distribucion []*pb.PropuestaChunk) string{
 	a := "ok"
 	nChunks:= 0
-	for _,libro:=range LibroChunks{
+	for _,libro:=range libroChunks{
 		nChunks=nChunks+len(libro)
 	}
 	for _,p := range distribucion {
@@ -235,8 +235,8 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 				}
 				if destiny == dataNodes[0]{
 					chunkEscribir,chunkOffset,chunkLibro:=ChunksPorEnviar[ind].Chunk,ChunksPorEnviar[ind].Offset,ChunksPorEnviar[ind].Name
-					newChunk:=Chunk{offset:int(chunkOffset) , data:chunkEscribir}
-					LibroChunks[chunkLibro]=append(LibroChunks[chunkLibro],newChunk)
+					newChunk:=aChunk{offset:int(chunkOffset) , data:chunkEscribir}
+					libroChunks[chunkLibro]=append(libroChunks[chunkLibro],newChunk)
 					fmt.Println("Cargado el libro")
 					
 					archivoChunk, err := os.Create(strings.Split(chunkLibro,".")[0]+"--"+fmt.Sprint(chunkOffset))
@@ -283,17 +283,16 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 	}
 }
 func (s* server) VerStatus(ctx context.Context, status *pb.Status) (*pb.Status, error){
-	envioStatus:= Status()
+	envioStatus:= revisarStatus()
 	statusEnviar:=pb.Status{Status:envioStatus}
 	return &statusEnviar,nil
 }
 
 func (s* server) OrdenarChunk(ctx context.Context, chunkRecibido *pb.SendChunk ) (*pb.ReplyEmpty, error){
 	chunkEscribir,chunkOffset,chunkLibro:=chunkRecibido.Chunk,chunkRecibido.Offset,chunkRecibido.Name
-	newChunk:=Chunk{offset:int(chunkOffset) , data:chunkEscribir}
-	LibroChunks[chunkLibro]=append(LibroChunks[chunkLibro],newChunk)
+	newChunk:=aChunk{offset:int(chunkOffset) , data:chunkEscribir}
+	libroChunks[chunkLibro]=append(libroChunks[chunkLibro],newChunk)
 	fmt.Println("Cargado el libro")
-	fmt.Println(LibroChunks)
 
 	archivoChunk, err := os.Create(strings.Split(chunkLibro,".")[0]+"--"+fmt.Sprint(chunkOffset))
     if err != nil {
@@ -342,10 +341,10 @@ func (s* server) EstadoLog(ctx context.Context, peticion *pb.EstadoNode ) (*pb.E
 
 
 }
-func Status()string{
+func revisarStatus()string{
 	fmt.Println("Viendo status..")
 	nChunks:= 0
-	for _,libro:=range LibroChunks{
+	for _,libro:=range libroChunks{
 		nChunks=nChunks+len(libro)
 	}
 	if nChunks>=200000{
@@ -372,7 +371,7 @@ func main() {
     	log.Fatalf("Ingreso mal el tipo de funcionamiento ,abortando")
     }
 
-	dataNodes=ReadAddress()
+	dataNodes=readAddress()
 	fmt.Println(dataNodes,"namenode: ",addressNameNode)
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
