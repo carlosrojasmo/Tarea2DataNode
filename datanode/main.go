@@ -115,7 +115,7 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 
     		if funcionamiento == "C"{//Version centralizada
 
-    			conn, err := grpc.Dial(addressNameNode, grpc.WithInsecure(), grpc.WithBlock())
+    			conn, err := grpc.Dial(addressNameNode, grpc.WithInsecure(), grpc.WithBlock(),grpc.WithTimeout(30 * time.Second))
     			if err != nil {
     				log.Fatalf("did not connect: %v", err)
     			}
@@ -137,7 +137,7 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 		    		respuestas = append(respuestas,statusRevisar(distribucion))
 
 		    		for _,dir := range dataNodes[1:] { //Enviamos la distribucion a cada nodo y guardamos sus respuestas
-		    			conn, err := grpc.Dial(dir, grpc.WithInsecure(), grpc.WithBlock())
+		    			conn, err := grpc.Dial(dir, grpc.WithInsecure(), grpc.WithBlock(),grpc.WithTimeout(30 * time.Second))
     					if err != nil {
     						respuestas = append(respuestas,"notOk")
     						fmt.Println(err)
@@ -183,7 +183,7 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 						for i,nodo:=range dataNodes{
 							if i==0{
 							}else{
-								connNode,err := grpc.Dial(nodo,grpc.WithInsecure(),grpc.WithBlock())
+								connNode,err := grpc.Dial(nodo,grpc.WithInsecure(),grpc.WithBlock(),grpc.WithTimeout(30 * time.Second))
 								if err !=nil{
 									fmt.Println("nodo : ",nodo," caido")
 								}
@@ -203,7 +203,7 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 							
 						estadoCritico.status="TOMADA"	
 						ChunksPorDistribuir = distribucion
-		    			conn, err := grpc.Dial(addressNameNode, grpc.WithInsecure(), grpc.WithBlock())
+		    			conn, err := grpc.Dial(addressNameNode, grpc.WithInsecure(), grpc.WithBlock(),grpc.WithTimeout(30 * time.Second))
     					if err != nil {
     						fmt.Println(err)
     					}
@@ -250,7 +250,7 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 					fmt.Println("Cargado el libro")
 
 				} else {
-					conn2, err := grpc.Dial(destiny, grpc.WithInsecure(), grpc.WithBlock())
+					conn2, err := grpc.Dial(destiny, grpc.WithInsecure(), grpc.WithBlock(),grpc.WithTimeout(30 * time.Second))
     				if err != nil {
     					log.Fatalf("did not connect: %v", err)
     				}
