@@ -187,7 +187,7 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 								connNode,err := grpc.Dial(nodo,grpc.WithInsecure(),grpc.WithBlock(),grpc.WithTimeout(30 * time.Second))
 								if err !=nil{
 									fmt.Println("nodo : ",nodo," caido")
-								}
+								} else {
 								defer connNode.Close()
 								pregunta:= pb.NewLibroServiceClient(connNode)
 								ctx, cancel:=context.WithTimeout(context.Background(),time.Second)
@@ -195,10 +195,10 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 								respuesta,err:= pregunta.EstadoLog(ctx,&pb.EstadoNode{Status:estadoCritico.status,Timestamp:estadoCritico.timestamp})
 								if err !=nil{
 									fmt.Println("nodo : ",nodo," caido")
-								}
-								if respuesta.Status != "LIBERADA"{
+								}else if respuesta.Status != "LIBERADA"{
 									fmt.Println("nodo : ",nodo," no liberado")
-								}
+								} 
+							}
 							}
 							}
 							
