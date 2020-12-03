@@ -149,6 +149,7 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 							stat , err := c.VerStatus2(ctx,&pb.Propuesta{Chunk : distribucion})
 							if err != nil{
 								respuestas = append(respuestas,"notOk")
+								fmt.Println("fue despues de stat")
 								fmt.Println(err)
 							} else {
 								respuestas = append(respuestas,stat.GetStatus())
