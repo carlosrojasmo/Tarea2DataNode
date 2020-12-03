@@ -162,7 +162,7 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 		    		for i,res := range respuestas { //modificamos la propuesta
 		    			if res != "ok"{
 		    				for j,p := range distribucion{
-		    					if p.GetIpMaquina() == dataNodes[i + 1]{
+		    					if p.GetIpMaquina() == dataNodes[i]{
 		    						newadd := r1.Intn(len(dataNodes))
 		    						for p.GetIpMaquina() == dataNodes[newadd]{
 		    							newadd = r1.Intn(len(dataNodes))
