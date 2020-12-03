@@ -125,6 +125,7 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 				//defer cancel()
 				distribucionRevisada , err := c.SendPropuesta(context.Background(),&pb.Propuesta{Chunk : distribucion})
 				if err != nil{
+					fmt.Println("No se pudo aprobar la distribucion fallo critico")
 					fmt.Println(err)
 				}
 
@@ -140,7 +141,7 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 		    			conn, err := grpc.Dial(dir, grpc.WithInsecure(), grpc.WithBlock(),grpc.WithTimeout(30 * time.Second))
     					if err != nil {
     						respuestas = append(respuestas,"notOk")
-    						fmt.Println(err)
+    						fmt.Println("Nodo caido")
     					} else{
     						defer conn.Close()
     						c := pb.NewLibroServiceClient(conn)
@@ -149,8 +150,6 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 							stat , err := c.VerStatus2(ctx,&pb.Propuesta{Chunk : distribucion})
 							if err != nil{
 								respuestas = append(respuestas,"notOk")
-								fmt.Println("fue despues de stat")
-								fmt.Println(err)
 							} else {
 								respuestas = append(respuestas,stat.GetStatus())
 							}
@@ -178,7 +177,7 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 
 		    		}
 
-		    		if acepto {
+		    		if acepto { //Algoritmo de ricart y arawala
 						estadoCritico.status="BUSCADA"
 						estadoCritico.timestamp=time.Now().UnixNano()
 						for i,nodo:=range dataNodes{
@@ -205,21 +204,16 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 						estadoCritico.status="TOMADA"	
 						ChunksPorDistribuir = distribucion
 		    			conn, err := grpc.Dial(addressNameNode, grpc.WithInsecure(), grpc.WithBlock())
-		    			fmt.Println("Despues de conectar con namenode")
     					if err != nil {
     						fmt.Println(err)
-    						fmt.Println("En realidad No conecto")
     					}
     					defer conn.Close()
     					c := pb.NewLibroServiceClient(conn)
     					ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 						defer cancel()
-						fmt.Println("verstatus2")
 						_, err = c.VerStatus2(ctx,&pb.Propuesta{Chunk : distribucion})
-						fmt.Println("retorn")
 						if err != nil{
-							fmt.Println(err)
-							fmt.Println("fallo verstatus2")
+							fmt.Println("Fallo la escritura en el log")
 						}
 						estadoCritico.status="LIBERADA"
 		    			break
@@ -243,22 +237,21 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 					chunkEscribir,chunkOffset,chunkLibro:=ChunksPorEnviar[ind].Chunk,ChunksPorEnviar[ind].Offset,ChunksPorEnviar[ind].Name
 					newChunk:=aChunk{offset:int(chunkOffset) , data:chunkEscribir}
 					libroChunks[chunkLibro]=append(libroChunks[chunkLibro],newChunk)
-					fmt.Println("Cargado el libro")
 					
 					archivoChunk, err := os.Create(strings.Split(chunkLibro,".")[0]+"--"+fmt.Sprint(chunkOffset))
 				    if err != nil {
 				        panic(err)
 				    }
 					defer archivoChunk.Close()
-					if _, err = archivoChunk.Write(chunkEscribir); err != nil { // puede ser esta una linea error debido al write, probar pagina penca si no sirve
+					if _, err = archivoChunk.Write(chunkEscribir); err != nil { 
 						panic(err)
 					}
-					fmt.Println("Cargado el libro")
+			
 
 				} else {
 					conn2, err := grpc.Dial(destiny, grpc.WithInsecure(), grpc.WithBlock(),grpc.WithTimeout(30 * time.Second))
     				if err != nil {
-    					log.Fatalf("did not connect: %v", err)
+    					fmt.Println("No se pudo comunicar con el nodo , fallo critico")
     				}
     				defer conn2.Close()
     				c := pb.NewLibroServiceClient(conn2)
@@ -298,14 +291,13 @@ func (s* server) OrdenarChunk(ctx context.Context, chunkRecibido *pb.SendChunk )
 	chunkEscribir,chunkOffset,chunkLibro:=chunkRecibido.Chunk,chunkRecibido.Offset,chunkRecibido.Name
 	newChunk:=aChunk{offset:int(chunkOffset) , data:chunkEscribir}
 	libroChunks[chunkLibro]=append(libroChunks[chunkLibro],newChunk)
-	fmt.Println("Cargado el libro")
 
 	archivoChunk, err := os.Create(strings.Split(chunkLibro,".")[0]+"--"+fmt.Sprint(chunkOffset))
     if err != nil {
         panic(err)
     }
 	defer archivoChunk.Close()
-	if _, err = archivoChunk.Write(chunkEscribir); err != nil { // puede ser esta una linea error debido al write, probar pagina penca si no sirve
+	if _, err = archivoChunk.Write(chunkEscribir); err != nil { 
 		panic(err)
 	}
 	reply:=pb.ReplyEmpty{Ok:int64(1)}
@@ -314,7 +306,7 @@ func (s* server) OrdenarChunk(ctx context.Context, chunkRecibido *pb.SendChunk )
 
 func (s* server ) DownloadChunk(ctx context.Context, chunkID *pb.ChunkId) (*pb.SendChunk, error){
 	IDChunk:=chunkID.Id
-	chunkPedido, err := ioutil.ReadFile(IDChunk) //revisar si lo devuelve en cadena de bits
+	chunkPedido, err := ioutil.ReadFile(IDChunk) 
 	if err != nil {
 		fmt.Print(err)
 	}
@@ -373,7 +365,7 @@ func main() {
     input1 = strings.Replace(input1, "\n", "", -1)
     input1 = strings.Replace(input1, "\r", "", -1)
     funcionamiento = input1
-    if funcionamiento != "C" && funcionamiento != "D"{
+    if funcionamiento != "C" && funcionamiento != "D"{ // Se pide si el funcionamiento es centralizado
     	log.Fatalf("Ingreso mal el tipo de funcionamiento ,abortando")
     }
 
