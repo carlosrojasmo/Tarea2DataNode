@@ -41,7 +41,7 @@ type estado struct{
 }
 
 func readAddress() []string{
-    f, err := os.Open("address.txt")
+    f, err := os.Open("../../Tarea2DataNode/datanode/address.txt")
     listaAddress:= []string{}
 
     if err != nil {
