@@ -204,17 +204,22 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
 							
 						estadoCritico.status="TOMADA"	
 						ChunksPorDistribuir = distribucion
-		    			conn, err := grpc.Dial(addressNameNode, grpc.WithInsecure(), grpc.WithBlock(),grpc.WithTimeout(30 * time.Second))
+		    			conn, err := grpc.Dial(addressNameNode, grpc.WithInsecure(), grpc.WithBlock())
+		    			fmt.Println("Despues de conectar con namenode")
     					if err != nil {
     						fmt.Println(err)
+    						fmt.Println("En realidad No conecto")
     					}
     					defer conn.Close()
     					c := pb.NewLibroServiceClient(conn)
     					ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 						defer cancel()
+						fmt.Println("verstatus2")
 						_, err = c.VerStatus2(ctx,&pb.Propuesta{Chunk : distribucion})
+						fmt.Println("retorn")
 						if err != nil{
 							fmt.Println(err)
+							fmt.Println("fallo verstatus2")
 						}
 						estadoCritico.status="LIBERADA"
 		    			break
