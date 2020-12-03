@@ -121,9 +121,9 @@ func (s* server) UploadBook(stream pb.LibroService_UploadBookServer) error {
     			}
     			defer conn.Close()
     			c := pb.NewLibroServiceClient(conn)
-    			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+    			//ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 				defer cancel()
-				distribucionRevisada , err := c.SendPropuesta(ctx,&pb.Propuesta{Chunk : distribucion})
+				distribucionRevisada , err := c.SendPropuesta(context.Background(),&pb.Propuesta{Chunk : distribucion})
 				if err != nil{
 					fmt.Println(err)
 				}
